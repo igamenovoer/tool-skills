@@ -1,0 +1,63 @@
+name: Sync Houmao Skills
+
+on:
+  repository_dispatch:
+    types:
+      - houmao-release-published
+  workflow_dispatch:
+    inputs:
+      houmao_ref:
+        description: Houmao ref to sync from
+        required: false
+        default: main
+  schedule:
+    - cron: "17 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-houmao
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out tool skills
+        uses: actions/checkout@v4
+        with:
+          path: tool-skills
+
+      - name: Check out Houmao
+        uses: actions/checkout@v4
+        with:
+          repository: igamenovoer/houmao
+          ref: ${{ github.event.client_payload.houmao_ref || github.event.inputs.houmao_ref || 'main' }}
+          path: houmao
+
+      - name: Sync Houmao skills
+        run: |
+          cd tool-skills
+          scripts/sync-houmao.sh ../houmao
+
+      - name: Validate Houmao skill discovery
+        run: |
+          cd tool-skills
+          npx --yes skills add ./houmao --list
+
+      - name: Commit and push changes
+        run: |
+          cd tool-skills
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to sync."
+            exit 0
+          fi
+
+          houmao_sha="$(git -C ../houmao rev-parse --short HEAD)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Sync Houmao skills from ${houmao_sha}"
+          git push
+
