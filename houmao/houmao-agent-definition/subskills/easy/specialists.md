@@ -23,10 +23,18 @@ Use this subskill when the user wants to create, inspect, update, list, or remov
 ```text
 <chosen houmao-mgr launcher> project easy specialist list
 <chosen houmao-mgr launcher> project easy specialist get --name <name>
-<chosen houmao-mgr launcher> project easy specialist create --name <name> --tool <tool> ...
-<chosen houmao-mgr launcher> project easy specialist set --name <name> ...
 <chosen houmao-mgr launcher> project easy specialist remove --name <name>
 ```
+
+For `create`, use the CLI-owned config draft before running the maintained command:
+
+```text
+<chosen houmao-mgr launcher> internals config-drafts generate --id project.easy.specialist --intent '<json>'
+```
+
+The `project.easy.specialist` config draft is intentionally minimal. Its intent fields are only `name`, `tool`, and `credential`. For prompt content, setup changes, model/reasoning, skills, env records, system-skill policy, mailbox posture, or credential material, use the maintained `project easy specialist create|set` command fields directly instead of adding them to the draft intent.
+
+For `set`, keep the maintained patch command explicit and include only the user-requested mutation fields.
 
 ## Create Inputs
 
@@ -34,10 +42,10 @@ Common specialist inputs:
 
 - `--name`
 - `--tool claude|codex|gemini|...`
-- `--credential <name>`; when omitted, the CLI default is `<specialist-name>-creds`
+- `--credential <name>`
 - `--system-prompt` or `--system-prompt-file`
 - `--setup <name>`; default is `default`
-- `--no-unattended` to persist `as_is`; otherwise easy specialists default to unattended prompt mode, which does not imply headless launch posture
+- `--no-unattended` only when the user explicitly wants `as_is`; do not invent this flag from preference
 - `--model`
 - `--reasoning-level`
 - repeatable `--with-skill <dir>`
@@ -108,3 +116,5 @@ Common update and clear inputs:
 - Do not execute login flows or auth-generation helpers.
 - Do not treat `auto credentials` as a literal CLI flag.
 - Do not infer auth identity from `.houmao/` auth directory names.
+- Do not hand-author specialist config YAML skeletons; use `internals config-drafts generate` for supported minimal specialist config authoring.
+- Do not pass model, env, mailbox, prompt, skill, or credential material fields to `project.easy.specialist` config drafts.
